@@ -1,0 +1,50 @@
+<!-- popup/popup.html -->
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>FortiVault</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="container">
+    <img src="../icons/icon128.png"></img>
+    <h2>FortiVault</h2>
+
+    <div id="auth-section">
+      <input id="masterPassword" type="password" placeholder="Master Password" />
+      <button id="unlockBtn">Unlock Vault</button>
+    </div>
+    <div id="detected-credentials" style="display:none; border:1px solid #ccc; padding:10px; margin:10px;"></div>
+
+    <div id="vault-section" style="display:none;">
+      <button id="lockBtn">Lock</button>
+      <button id="syncBtn">Sync to Cloud</button>
+      <button id="loginBtn">Login to Backend</button>
+
+      <h3>Saved Passwords</h3>
+      <div id="vaultList"></div>
+
+      <h4>Add Manually</h4>
+      <input id="siteInput" placeholder="Site name" />
+      <input id="urlInput" placeholder="URL" />
+      <input id="usernameInput" placeholder="Username" />
+      <input id="passwordInput" placeholder="Password" />
+      <button id="addManualBtn">Add</button>
+    </div>
+
+    <div id="login-modal" style="display:none;">
+      <h4>Backend Login</h4>
+      <input id="backendEmail" placeholder="Email" />
+      <input id="backendPassword" placeholder="Password" type="password" />
+      <button id="backendLoginBtn">Login</button>
+      <button id="closeLoginModal">Close</button>
+    </div>
+
+    <div id="message"></div>
+  </div>
+
+  <script src="../utils/crypto-utils.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
