@@ -23,15 +23,29 @@
   let masterKey = null;
   let masterPassword = null;
 
-  function showMessage(msg, timeout = 3000) {
+  function showMessage(msg, timeout = 3000, type = 'success') {
     messageDiv.textContent = msg;
-    setTimeout(() => messageDiv.textContent = '', timeout);
+    messageDiv.style.display = 'block';
+    
+    // Apply different styles based on message type
+    if (type === 'error') {
+      messageDiv.style.background = 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
+    } else if (type === 'info') {
+      messageDiv.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+    } else {
+      messageDiv.style.background = 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)';
+    }
+    
+    setTimeout(() => {
+      messageDiv.textContent = '';
+      messageDiv.style.display = 'none';
+    }, timeout);
   }
 
   // Unlock vault
   unlockBtn.addEventListener('click', async () => {
     const pw = masterInput.value;
-    if (!pw) return showMessage('Enter master password');
+    if (!pw) return showMessage('Enter master password', 3000, 'error');
 
     const stored = await chrome.storage.local.get([STORAGE_KEYS.MASTER_SALT, 'securevault_master_hash']);
     let salt = stored[STORAGE_KEYS.MASTER_SALT];
@@ -53,7 +67,7 @@
       await chrome.storage.local.set({ 'securevault_master_hash': hashHex });
       showMessage('Master password set successfully!');
     } else if (storedHash !== hashHex) {
-      return showMessage('❌ Incorrect master password');
+      return showMessage('Incorrect master password', 3000, 'error');
     }
 
     try {
@@ -62,10 +76,10 @@
       await renderVault();
       document.getElementById('auth-section').style.display = 'none';
       vaultSection.style.display = 'block';
-      showMessage('Vault unlocked');
+      showMessage('Vault unlocked', 3000, 'success');
     } catch (err) {
       console.error(err);
-      showMessage('Failed to derive key');
+      showMessage('Failed to derive key', 3000, 'error');
     }
   });
 
@@ -97,11 +111,12 @@
         div.className = 'entry';
         div.innerHTML = `
           <div class="left">
-            <div><strong>${e.site}</strong> <span class="small">(${e.url})</span></div>
-            <div class="small">${e.username}</div>
+            <div><strong>${e.site}</strong></div>
+            <div class="small"><a href="${e.url}" target="_blank" rel="noopener noreferrer" class="url-link">${e.url}</a></div>
+            <div class="small">Username: ${e.username}</div>
             <div class="small">Password: <span class="pwd">*****</span></div>
           </div>
-          <div>
+          <div class="entry-actions">
             <button class="reveal">Reveal</button>
             <button class="fill">Autofill</button>
             <button class="del">Delete</button>
@@ -136,12 +151,12 @@
 
   // Add manual entry
   addManualBtn.addEventListener('click', async () => {
-    if (!masterKey || !masterPassword) return showMessage('Unlock vault first');
+    if (!masterKey || !masterPassword) return showMessage('Unlock vault first', 3000, 'error');
     const site = siteInput.value;
     const url = urlInput.value;
     const username = usernameInput.value;
     const password = passwordInput.value;
-    if (!site || !password) return showMessage('Site and password required');
+    if (!site || !password) return showMessage('Site and password required', 3000, 'error');
 
     const stored = await chrome.storage.local.get(STORAGE_KEYS.MASTER_SALT);
     const salt = stored[STORAGE_KEYS.MASTER_SALT];
@@ -169,7 +184,7 @@
 
   // Sync to backend
   syncBtn.addEventListener('click', async () => {
-    showMessage('Syncing...');
+    showMessage('Syncing...', 3000, 'info');
     chrome.runtime.sendMessage({ type: 'SYNC_TO_BACKEND' }, (resp) => {
       if (resp && resp.success) showMessage('Sync succeeded');
       else showMessage('Sync failed: ' + (resp && resp.error ? JSON.stringify(resp.error) : 'unknown'));
@@ -184,7 +199,7 @@
   document.getElementById('backendLoginBtn').addEventListener('click', async () => {
     const email = document.getElementById('backendEmail').value;
     const pw = document.getElementById('backendPassword').value;
-    if (!email || !pw) return showMessage('Enter backend credentials');
+    if (!email || !pw) return showMessage('Enter backend credentials', 3000, 'error');
 
     try {
       const res = await fetch('http://localhost:2025/api/extension/login', {
@@ -194,7 +209,7 @@
       });
       if (!res.ok) {
         const txt = await res.text();
-        return showMessage('Login failed: ' + txt);
+        return showMessage('Login failed: ' + txt, 3000, 'error');
       }
       const data = await res.json();
       if (data.success) {
@@ -204,7 +219,7 @@
 }
 
     } catch (err) {
-      showMessage('Login error');
+      showMessage('Login error', 3000, 'error');
     }
   });
 
@@ -228,7 +243,7 @@
       `;
 
       document.getElementById("saveDetected").addEventListener("click", async () => {
-        if (!masterPassword) return showMessage("Unlock vault first");
+        if (!masterPassword) return showMessage("Unlock vault first", 3000, 'error');
 
         const vaultData = (await chrome.storage.local.get(STORAGE_KEYS.VAULT))[STORAGE_KEYS.VAULT] || [];
         const stored = await chrome.storage.local.get(STORAGE_KEYS.MASTER_SALT);

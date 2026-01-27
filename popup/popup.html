@@ -4,12 +4,17 @@
 <head>
   <meta charset="utf-8" />
   <title>FortiVault</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
   <div class="container">
-    <img src="../icons/icon128.png"></img>
-    <h2>FortiVault</h2>
+    <div class="header">
+      <img src="../icons/forti.png" alt="FortiVault Logo">
+      <h2>FortiVault</h2>
+    </div>
 
     <div id="auth-section">
       <input id="masterPassword" type="password" placeholder="Master Password" />
@@ -17,7 +22,7 @@
     </div>
     <div id="detected-credentials" style="display:none; border:1px solid #ccc; padding:10px; margin:10px;"></div>
 
-    <div id="vault-section" style="display:none;">
+    <div id="vault-section" style="display:none;" class="vault-section">
       <button id="lockBtn">Lock</button>
       <button id="syncBtn">Sync to Cloud</button>
       <button id="loginBtn">Login to Backend</button>
