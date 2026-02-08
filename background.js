@@ -7,7 +7,8 @@ const BACKEND_BASE_URL = "http://localhost:2025"; // <-- replace
 const STORAGE_KEYS = {
   VAULT: 'securevault_vault',        // stores array of entries {id, site, url, username, ciphertext, iv, salt}
   MASTER_SALT: 'securevault_salt',   // salt used for PBKDF2 (base64)
-  TOKEN: 'securevault_token'         // optional backend JWT after login
+  TOKEN: 'securevault_token'    
+       // optional backend JWT after login
 };
 
 // Generate a UUID for entry ids
@@ -73,37 +74,61 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       }
 
       if (msg.type === 'SYNC_TO_BACKEND') {
-  const tokenStored = (await chrome.storage.local.get(STORAGE_KEYS.TOKEN))[STORAGE_KEYS.TOKEN];
-  const vault = (await chrome.storage.local.get(STORAGE_KEYS.VAULT))[STORAGE_KEYS.VAULT] || [];
-  const userData = (await chrome.storage.local.get("securevault_user"))["securevault_user"];
-  
-  if (!userData || !userData.email) {
-    sendResponse({ success: false, error: "User not logged in" });
-    return;
-  }
+        const tokenStored = (await chrome.storage.local.get(STORAGE_KEYS.TOKEN))[STORAGE_KEYS.TOKEN];
+        const vault = (await chrome.storage.local.get(STORAGE_KEYS.VAULT))[STORAGE_KEYS.VAULT] || [];
+        const userData = (await chrome.storage.local.get("securevault_user"))["securevault_user"];
+        
+        if (!userData || !userData.email) {
+          sendResponse({ success: false, error: "User not logged in" });
+          return;
+        }
 
-  const res = await fetch(`${BACKEND_BASE_URL}/api/extension/sync-vault`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': tokenStored ? `Bearer ${tokenStored}` : '',
-    },
-    body: JSON.stringify({
-      email: userData.email,
-      vault
-    })
-  });
+        const res = await fetch(`${BACKEND_BASE_URL}/api/extension/sync-vault`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': tokenStored ? `Bearer ${tokenStored}` : '',
+          },
+          body: JSON.stringify({
+            email: userData.email,
+            vault
+          })
+        });
 
-  if (!res.ok) {
-    const text = await res.text();
-    sendResponse({ success: false, error: text });
-  } else {
-    const data = await res.json();
-    sendResponse({ success: true, data });
-  }
-}
+        if (!res.ok) {
+          const text = await res.text();
+          sendResponse({ success: false, error: text });
+        } else {
+          const data = await res.json();
+          sendResponse({ success: true, data });
+        }
+      }
 
+      // Google Safe Browsing via backend
+if (msg.type === 'CHECK_URL_SAFETY') {
+        const { url } = msg.payload || {};
+        if (!url) {
+          sendResponse({ success: false, error: "URL is required" });
+          return;
+        }
 
+        const res = await fetch(`${BACKEND_BASE_URL}/api/extension/check-url`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ url })
+        });
+
+        if (!res.ok) {
+          const text = await res.text();
+          sendResponse({ success: false, error: text });
+          return;
+        }
+
+        const data = await res.json();
+        sendResponse({ success: true, data });
+      }
       if (msg.type === 'STORE_TOKEN') {
         await chrome.storage.local.set({ [STORAGE_KEYS.TOKEN]: msg.payload.token });
         sendResponse({ success: true });
@@ -115,7 +140,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     }
   })();
 
-  // Tell Chrome we'll send a response asynchronously
   return true;
 });
 
@@ -123,7 +147,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'DETECTED_CREDENTIALS') {
     console.log('Detected credentials:', msg.payload);
     
-    // Ask user for confirmation via notification or popup
     chrome.notifications.create({
       type: "basic",
       title: "Save Credentials?",
@@ -131,7 +154,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       iconUrl: "icons/icon128.png"
     });
 
-    // Store temporarily for popup
     chrome.storage.local.set({ lastDetectedCredentials: msg.payload });
   }
 });
